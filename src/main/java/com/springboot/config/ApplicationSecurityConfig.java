@@ -14,8 +14,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import static com.springboot.config.ApplicationUserRole.*;
+
+import java.util.concurrent.TimeUnit;
+
 import static com.springboot.config.ApplicationUserPermission.*;
 
 @Configuration
@@ -42,11 +46,19 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter {
 //			.antMatchers(HttpMethod.POST,"/manage/students/**").hasAuthority(COURSE_WRITE.getPermission())
 //			.antMatchers(HttpMethod.PUT,"/manage/students/**").hasAuthority(COURSE_WRITE.getPermission())			
 //			.antMatchers("/manage/students/**").hasAnyRole(ADMIN.name(),ADMIN_TRAINEE.name())
-			.anyRequest()
-			.authenticated()
+			.anyRequest().authenticated()
 			.and()
-			.formLogin().loginPage("/login").permitAll(); // communication exchange with server happens via Jsessionid
-			//.httpBasic();
+			.formLogin().loginPage("/login").permitAll() // .httpBasic();  
+				.defaultSuccessUrl("/courses",true)
+			.and().rememberMe() // defaults to two weeks
+				 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+			.and().logout()
+			 	.logoutUrl("/logout")
+			 	.logoutRequestMatcher(new AntPathRequestMatcher("/logout","GET"))// if csrf is enabled this line should be delted because logout has to be a Post
+			 	.clearAuthentication(true)
+			 	.invalidateHttpSession(true)
+			 	.deleteCookies("JSESSIONID","remember-me")
+			 	.logoutSuccessUrl("/login");
 	}
 
 	@Override
